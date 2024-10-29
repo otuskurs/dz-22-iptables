@@ -1,0 +1,27 @@
+---
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s8:
+      addresses:
+      - 192.168.255.1/30
+      optional: false
+      routes:
+        - to: 192.168.0.0/24
+          via: 192.168.255.2
+        - to: 192.168.1.0/24
+          via: 192.168.255.2
+        - to: 192.168.2.0/24
+          via: 192.168.255.2
+        - to: 192.168.255.4/30 
+          via: 192.168.255.2
+        - to: 192.168.255.8/30
+          via: 192.168.255.2
+    enp0s19:
+      addresses:
+      - 192.168.56.10/24
+      optional: false
+    enp0s3:
+      dhcp4: true
+      optional: false

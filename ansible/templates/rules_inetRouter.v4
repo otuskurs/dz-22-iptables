@@ -1,0 +1,41 @@
+*filter
+# Политики по умолчанию для цепочек
+:INPUT ACCEPT [3746:214611]
+:FORWARD ACCEPT [193:14668]
+:OUTPUT ACCEPT [2188:172583]
+# Определение пользовательских цепочек
+:SSH-INPUT - [0:0]
+:SSH-INPUTTWO - [0:0]
+:TRAFFIC - [0:0]
+# Правила для цепочки INPUT
+-A INPUT -p icmp -j ACCEPT # Разрешить весь ICMP трафик
+-A INPUT -i lo -j ACCEPT   # Разрешить весь трафик от интерфейса lo (localhost)
+-A INPUT -i enp0s8 -j TRAFFIC # Направить трафик от enp0s8 в цепочку TRAFFIC
+# Правила для пользовательских цепочек
+-A SSH-INPUT -m recent --set --name SSH1 --mask 255.255.255.255 --rsource -j DROP
+-A SSH-INPUTTWO -m recent --set --name SSH2 --mask 255.255.255.255 --rsource -j DROP
+-A TRAFFIC -i enp0s8 -m state --state RELATED,ESTABLISHED -j ACCEPT # Разрешить существующие соединения
+# Правила для новых соединений
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp --dport 22 -m recent --rcheck --seconds 30 --name SSH2 --mask 255.255.255.255 --rsource -j ACCEPT
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH2 --mask 255.255.255.255 --rsource -j DROP
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp --dport 9991 -m recent --rcheck --name SSH1 --mask 255.255.255.255 --rsource -j SSH-INPUTTWO
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH1 --mask 255.255.255.255 --rsource -j DROP
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp --dport 7777 -m recent --rcheck --name SSH0 --mask 255.255.255.255 --rsource -j SSH-INPUT
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp -m recent --remove --name SSH0 --mask 255.255.255.255 --rsource -j DROP
+-A TRAFFIC -i enp0s8 -p tcp -m state --state NEW -m tcp --dport 8881 -m recent --set --name SSH0 --mask 255.255.255.255 --rsource -j DROP
+-A TRAFFIC -i enp0s8 -j DROP # Отклонять все остальные пакеты
+COMMIT
+
+*nat
+# Политики по умолчанию для NAT
+:PREROUTING ACCEPT [99:8492]
+:INPUT ACCEPT [1:44]
+:OUTPUT ACCEPT [61:4301]
+:POSTROUTING ACCEPT [21:1271]
+# Настройка маскарадинга
+-A POSTROUTING ! -d 192.168.0.0/16 -o enp0s3 -j MASQUERADE # Маскарадинг для трафика, исходящего не в локальную сеть
+COMMIT
+
+
+
+
